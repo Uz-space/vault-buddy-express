@@ -831,7 +831,6 @@ export class AppSidebarLeft extends SidebarSlider {
       onOpen: () => {
         moreSubmenu.onOpen();
         newSubmenu.onOpen();
-        
       },
       onClose: () => {
         moreSubmenu.onClose();
