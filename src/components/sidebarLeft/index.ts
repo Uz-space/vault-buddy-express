@@ -864,21 +864,32 @@ export class AppSidebarLeft extends SidebarSlider {
     bar.className = 'sidebar-home-indicator-bar';
     indicator.append(bar);
 
+    // Own menu instance so it pops upwards, anchored to the indicator.
+    const menuBtn = this.createToolsMenu(indicator, {top: 8, bottom: 8}, 'top-left');
+    menuBtn.classList.add('sidebar-home-indicator-menu-button');
+    indicator.append(menuBtn);
+
     this.sidebarEl.append(indicator);
     this.homeIndicator = indicator;
 
     const openMenu = () => {
-      if(this.toolsBtn.classList.contains('menu-open')) {
+      if(menuBtn.classList.contains('menu-open')) {
         return;
       }
 
-      simulateClickEvent(this.toolsBtn);
+      simulateClickEvent(menuBtn);
     };
 
-    attachClickEvent(indicator, openMenu);
+    attachClickEvent(indicator, (e) => {
+      if(findUpClassName(e.target as HTMLElement, 'btn-menu')) {
+        return;
+      }
+
+      openMenu();
+    });
 
     new SwipeHandler({
-      element: indicator,
+      element: bar,
       cancelEvent: true,
       onSwipe: (xDiff, yDiff) => {
         indicator.classList.toggle('is-pulling', yDiff < -8);
@@ -893,6 +904,7 @@ export class AppSidebarLeft extends SidebarSlider {
       }
     });
   }
+
 
   private async saveEncryptionKeyBeforeSwitchingAccounts() {
 
