@@ -1442,3 +1442,35 @@
     margin-inline: auto;
   }
 }
+
+// iOS-style home indicator at the bottom of the left column — swipe it up
+// (or tap it) to open the tools / burger menu.
+.sidebar-home-indicator {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 1.75rem;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+
+  &-bar {
+    width: 8.375rem;
+    max-width: 45%;
+    height: .3125rem;
+    border-radius: 9999px;
+    background-color: var(--secondary-text-color);
+    opacity: .5;
+    transition: transform .15s ease-out, opacity .15s ease-out;
+  }
+
+  &.is-pulling &-bar,
+  &.menu-open &-bar {
+    opacity: 1;
+    transform: translateY(-.25rem) scaleX(1.06);
+  }
+}
