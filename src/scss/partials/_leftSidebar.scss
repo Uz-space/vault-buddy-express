@@ -1429,3 +1429,16 @@
 #chats-archived-container {
   background-color: var(--surface-color);
 }
+
+// Burger (tools) button is removed from the main chat list header — the
+// search input takes the full header width and is centered instead.
+#column-left .item-main .main-search-sidebar-header {
+  .left-sidebar-burger {
+    display: none !important;
+  }
+
+  .input-search {
+    flex: 1 1 auto;
+    margin-inline: auto;
+  }
+}
