@@ -100,6 +100,7 @@ import isObject from '@helpers/object/isObject';
 import {useAppSettings} from '@stores/appSettings';
 import {useCollapsedCommunityDialogsKey} from '@stores/communities';
 import {openEmojiStatusPicker} from '@components/sidebarLeft/emojiStatusPicker';
+import SwipeHandler from '@components/swipeHandler';
 
 export const LEFT_COLUMN_ACTIVE_CLASSNAME = 'is-left-column-shown';
 
@@ -132,6 +133,8 @@ export class AppSidebarLeft extends SidebarSlider {
     useIsLeftSearchActive()[1](value);
   }
   private searchTriggerWhenCollapsed: HTMLElement;
+  private homeIndicator: HTMLElement;
+
 
   private updateBtn: HTMLElement;
   private hasUpdate: boolean;
@@ -391,6 +394,9 @@ export class AppSidebarLeft extends SidebarSlider {
     });
 
     this.buttonsContainer.parentElement.prepend(this.searchTriggerWhenCollapsed);
+
+    this.createHomeIndicator();
+
 
     // Visibility lives in JS — drives the `.is-visible` class from the
     // signals that decide whether the icon-only search affordance should
@@ -661,7 +667,11 @@ export class AppSidebarLeft extends SidebarSlider {
     });
   }
 
-  public createToolsMenu(mountTo?: HTMLElement, positionPadding?: Parameters<typeof ButtonMenuToggle>[0]['positionPadding']) {
+  public createToolsMenu(
+    mountTo?: HTMLElement,
+    positionPadding?: Parameters<typeof ButtonMenuToggle>[0]['positionPadding'],
+    direction: Parameters<typeof ButtonMenuToggle>[0]['direction'] = 'bottom-right'
+  ) {
     const closeTabsBefore = async(clb: () => void) => {
       this.closeEverythingInside() && await pause(200);
 
@@ -710,7 +720,7 @@ export class AppSidebarLeft extends SidebarSlider {
     const filteredButtons = menuButtons.filter(Boolean);
     const filteredButtonsSliced = filteredButtons.slice();
     const buttonMenuToggle = ButtonMenuToggle({
-      direction: 'bottom-right',
+      direction,
       buttons: filteredButtons,
       container: mountTo,
       positionPadding,
@@ -841,6 +851,51 @@ export class AppSidebarLeft extends SidebarSlider {
 
     return buttonMenuToggle;
   }
+
+  // iOS-like home indicator pinned to the bottom of the left column.
+  // Swiping it up (or tapping it) opens the same burger / tools menu that
+  // used to live in the chat list header.
+  private createHomeIndicator() {
+    const indicator = document.createElement('div');
+    indicator.className = 'sidebar-home-indicator';
+
+    const bar = document.createElement('div');
+    bar.className = 'sidebar-home-indicator-bar';
+    indicator.append(bar);
+
+    // The indicator itself is the menu toggle, so the tools menu pops
+    // upwards from the bottom of the screen.
+    this.createToolsMenu(indicator, {top: 8, bottom: 8}, 'top-left');
+
+    this.sidebarEl.append(indicator);
+    this.homeIndicator = indicator;
+
+    const openMenu = () => {
+      if(indicator.classList.contains('menu-open')) {
+        return;
+      }
+
+      simulateClickEvent(indicator);
+    };
+
+
+    new SwipeHandler({
+      element: bar,
+      cancelEvent: true,
+      onSwipe: (xDiff, yDiff) => {
+        indicator.classList.toggle('is-pulling', yDiff < -8);
+        if(yDiff <= -32) {
+          indicator.classList.remove('is-pulling');
+          openMenu();
+          return true;
+        }
+      },
+      onReset: () => {
+        indicator.classList.remove('is-pulling');
+      }
+    });
+  }
+
 
   private async saveEncryptionKeyBeforeSwitchingAccounts() {
     const isUsingPasscode = await DeferredIsUsingPasscode.isUsingPasscode();
