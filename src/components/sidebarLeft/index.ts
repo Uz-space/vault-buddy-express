@@ -830,7 +830,7 @@ export class AppSidebarLeft extends SidebarSlider {
       onOpen: () => {
         moreSubmenu.onOpen();
         newSubmenu.onOpen();
-        btnArchive.element?.append(this.archivedCount);
+        
       },
       onClose: () => {
         moreSubmenu.onClose();
