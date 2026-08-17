@@ -847,7 +847,49 @@ export class AppSidebarLeft extends SidebarSlider {
     return buttonMenuToggle;
   }
 
+  // iOS-like home indicator pinned to the bottom of the left column.
+  // Swiping it up (or tapping it) opens the same burger / tools menu that
+  // used to live in the chat list header.
+  private createHomeIndicator() {
+    const indicator = document.createElement('div');
+    indicator.className = 'sidebar-home-indicator';
+
+    const bar = document.createElement('div');
+    bar.className = 'sidebar-home-indicator-bar';
+    indicator.append(bar);
+
+    this.sidebarEl.append(indicator);
+    this.homeIndicator = indicator;
+
+    const openMenu = () => {
+      if(this.toolsBtn.classList.contains('menu-open')) {
+        return;
+      }
+
+      simulateClickEvent(this.toolsBtn);
+    };
+
+    attachClickEvent(indicator, openMenu);
+
+    new SwipeHandler({
+      element: indicator,
+      cancelEvent: true,
+      onSwipe: (xDiff, yDiff) => {
+        indicator.classList.toggle('is-pulling', yDiff < -8);
+        if(yDiff <= -32) {
+          indicator.classList.remove('is-pulling');
+          openMenu();
+          return true;
+        }
+      },
+      onReset: () => {
+        indicator.classList.remove('is-pulling');
+      }
+    });
+  }
+
   private async saveEncryptionKeyBeforeSwitchingAccounts() {
+
     const isUsingPasscode = await DeferredIsUsingPasscode.isUsingPasscode();
     if(!isUsingPasscode) return;
 
