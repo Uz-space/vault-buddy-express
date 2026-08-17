@@ -864,29 +864,21 @@ export class AppSidebarLeft extends SidebarSlider {
     bar.className = 'sidebar-home-indicator-bar';
     indicator.append(bar);
 
-    // Own menu instance so it pops upwards, anchored to the indicator.
-    const menuBtn = this.createToolsMenu(indicator, {top: 8, bottom: 8}, 'top-left');
-    menuBtn.classList.add('sidebar-home-indicator-menu-button');
-    indicator.append(menuBtn);
+    // The indicator itself is the menu toggle, so the tools menu pops
+    // upwards from the bottom of the screen.
+    this.createToolsMenu(indicator, {top: 8, bottom: 8}, 'top-left');
 
     this.sidebarEl.append(indicator);
     this.homeIndicator = indicator;
 
     const openMenu = () => {
-      if(menuBtn.classList.contains('menu-open')) {
+      if(indicator.classList.contains('menu-open')) {
         return;
       }
 
-      simulateClickEvent(menuBtn);
+      simulateClickEvent(indicator);
     };
 
-    attachClickEvent(indicator, (e) => {
-      if(findUpClassName(e.target as HTMLElement, 'btn-menu')) {
-        return;
-      }
-
-      openMenu();
-    });
 
     new SwipeHandler({
       element: bar,
