@@ -398,7 +398,6 @@ export class AppSidebarLeft extends SidebarSlider {
     this.createHomeIndicator();
 
 
-
     // Visibility lives in JS — drives the `.is-visible` class from the
     // signals that decide whether the icon-only search affordance should
     // be shown. The CSS only reads that class, no body/parent-selector
