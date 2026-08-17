@@ -133,6 +133,8 @@ export class AppSidebarLeft extends SidebarSlider {
     useIsLeftSearchActive()[1](value);
   }
   private searchTriggerWhenCollapsed: HTMLElement;
+  private homeIndicator: HTMLElement;
+
 
   private updateBtn: HTMLElement;
   private hasUpdate: boolean;
