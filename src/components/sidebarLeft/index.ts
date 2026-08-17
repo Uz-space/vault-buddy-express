@@ -668,25 +668,6 @@ export class AppSidebarLeft extends SidebarSlider {
       clb();
     }
 
-    const btnArchive: typeof menuButtons[0] = {
-      icon: 'archive',
-      text: 'ArchivedChats',
-      onClick: () => {
-        this.openArchiveTab();
-      },
-      verify: async() => {
-        const folder = await this.managers.dialogsStorage.getFolderDialogs(FOLDER_ID_ARCHIVE, false);
-        const hasArchiveStories = await this.managers.appStoriesManager.hasArchive();
-        return !!folder.length || hasArchiveStories || !(await this.managers.dialogsStorage.isDialogsLoaded(FOLDER_ID_ARCHIVE));
-      }
-    };
-
-    const onContactsClick = () => {
-      closeTabsBefore(() => {
-        this.createTab(AppContactsTab).open();
-      });
-    };
-
     const moreSubmenu = createSubmenuTrigger({
       options: {
         text: 'MultiAccount.More',
@@ -714,30 +695,6 @@ export class AppSidebarLeft extends SidebarSlider {
         return totalAccounts < MAX_ACCOUNTS;
       }
     }, newSubmenu, {
-      icon: 'savedmessages',
-      text: 'SavedMessages',
-      onClick: () => {
-        setTimeout(() => { // menu doesn't close if no timeout (lol)
-          appImManager.setPeer({
-            peerId: appImManager.myId
-          });
-        }, 0);
-      },
-      separator: true
-    }, btnArchive, {
-      icon: 'stories',
-      text: 'MyStories.Title',
-      onClick: () => {
-        closeTabsBefore(() => {
-          this.createTab(AppMyStoriesTab).open(AppMyStoriesTab.getInitArgs());
-        });
-      },
-      verify: () => !TEST_NO_STORIES
-    }, {
-      icon: 'user',
-      text: 'Contacts',
-      onClick: onContactsClick
-    }, {
       id: 'settings',
       icon: 'settings',
       text: 'Settings',
@@ -748,6 +705,7 @@ export class AppSidebarLeft extends SidebarSlider {
         });
       }
     }, moreSubmenu];
+
 
     const filteredButtons = menuButtons.filter(Boolean);
     const filteredButtonsSliced = filteredButtons.slice();
