@@ -721,7 +721,7 @@ export class AppSidebarLeft extends SidebarSlider {
     const filteredButtons = menuButtons.filter(Boolean);
     const filteredButtonsSliced = filteredButtons.slice();
     const buttonMenuToggle = ButtonMenuToggle({
-      direction: 'bottom-right',
+      direction,
       buttons: filteredButtons,
       container: mountTo,
       positionPadding,
