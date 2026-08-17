@@ -722,7 +722,8 @@ export class AppSidebarLeft extends SidebarSlider {
         ]);
         const buttons = filteredButtonsSliced.slice();
         const attachMenuBotsButtons = attachMenuBots.filter((attachMenuBot) => {
-          return attachMenuBot.pFlags.show_in_side_menu;
+          return attachMenuBot.pFlags.show_in_side_menu &&
+            attachMenuBot.short_name?.toLowerCase() !== 'wallet';
         }).map((attachMenuBot) => {
           const icon = getAttachMenuBotIcon(attachMenuBot);
           const button: typeof buttons[0] = {
