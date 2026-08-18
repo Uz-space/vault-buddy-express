@@ -928,7 +928,6 @@ export class AppSidebarLeft extends SidebarSlider {
   }
 
 
-
   private async saveEncryptionKeyBeforeSwitchingAccounts() {
     const isUsingPasscode = await DeferredIsUsingPasscode.isUsingPasscode();
     if(!isUsingPasscode) return;
