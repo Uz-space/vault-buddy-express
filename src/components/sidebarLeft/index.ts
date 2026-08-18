@@ -853,8 +853,8 @@ export class AppSidebarLeft extends SidebarSlider {
   }
 
   // iOS-like home indicator pinned to the bottom of the left column.
-  // Swiping it up (or tapping it) opens the same burger / tools menu that
-  // used to live in the chat list header.
+  // ONLY swiping it up opens the tools / burger menu (a tap does nothing),
+  // and the bar follows the finger while pulling, like on iOS.
   private createHomeIndicator() {
     const indicator = document.createElement('div');
     indicator.className = 'sidebar-home-indicator';
@@ -864,34 +864,65 @@ export class AppSidebarLeft extends SidebarSlider {
     indicator.append(bar);
 
     // The indicator itself is the menu toggle, so the tools menu pops
-    // upwards from the bottom of the screen.
-    this.createToolsMenu(indicator, {top: 8, bottom: 8}, 'top-left');
+    // upwards, horizontally centered on the indicator.
+    this.createToolsMenu(indicator, {top: 8, bottom: 8}, 'top-center');
 
     this.sidebarEl.append(indicator);
     this.homeIndicator = indicator;
+
+    // Taps must NOT open the menu — swallow every click that wasn't
+    // synthesized by the swipe below.
+    let allowOpen = false;
+    indicator.addEventListener('click', (e) => {
+      if(!allowOpen) {
+        e.stopPropagation();
+        e.preventDefault();
+      }
+    }, {capture: true});
 
     const openMenu = () => {
       if(indicator.classList.contains('menu-open')) {
         return;
       }
 
+      allowOpen = true;
       simulateClickEvent(indicator);
+      allowOpen = false;
     };
 
+    const OPEN_THRESHOLD = 44;
+    const MAX_PULL = 22;
+
+    const setPull = (offset: number) => {
+      bar.style.setProperty('--pull', offset + 'px');
+    };
 
     new SwipeHandler({
-      element: bar,
+      element: indicator,
       cancelEvent: true,
+      verifyTouchTarget: () => !indicator.classList.contains('menu-open'),
       onSwipe: (xDiff, yDiff) => {
-        indicator.classList.toggle('is-pulling', yDiff < -8);
-        if(yDiff <= -32) {
+        if(yDiff >= 0) {
           indicator.classList.remove('is-pulling');
+          setPull(0);
+          return;
+        }
+
+        indicator.classList.add('is-pulling');
+        // rubber-band: follows the finger, slowing down near the max
+        const pull = MAX_PULL * (1 - Math.exp(-Math.abs(yDiff) / MAX_PULL));
+        setPull(-pull);
+
+        if(yDiff <= -OPEN_THRESHOLD) {
+          indicator.classList.remove('is-pulling');
+          setPull(0);
           openMenu();
           return true;
         }
       },
       onReset: () => {
         indicator.classList.remove('is-pulling');
+        setPull(0);
       }
     });
   }
