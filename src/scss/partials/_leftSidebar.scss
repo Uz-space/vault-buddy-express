@@ -1444,7 +1444,7 @@
 }
 
 // iOS-style home indicator at the bottom of the left column — swipe it up
-// to open the tools / burger menu (tapping does nothing).
+// (or tap it) to open the tools / burger menu.
 .sidebar-home-indicator {
   position: absolute;
   inset-inline: 0;
@@ -1452,33 +1452,25 @@
   height: 1.75rem;
   z-index: 4;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
-  padding-bottom: .5rem;
+  cursor: pointer;
   touch-action: none;
   user-select: none;
-  cursor: grab;
 
   &-bar {
-    --pull: 0px;
     width: 8.375rem;
     max-width: 45%;
     height: .3125rem;
     border-radius: 9999px;
     background-color: var(--secondary-text-color);
     opacity: .5;
-    transform: translate3d(0, var(--pull), 0);
-    transition: opacity .15s ease-out;
-    will-change: transform;
-  }
-
-  &:not(.is-pulling) &-bar {
-    transition: transform .25s cubic-bezier(.22, 1, .36, 1), opacity .15s ease-out;
+    transition: transform .15s ease-out, opacity .15s ease-out;
   }
 
   &.is-pulling &-bar,
   &.menu-open &-bar {
     opacity: 1;
+    transform: translateY(-.25rem) scaleX(1.06);
   }
 }
-
