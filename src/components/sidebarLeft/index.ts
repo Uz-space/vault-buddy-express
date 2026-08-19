@@ -884,7 +884,7 @@ export class AppSidebarLeft extends SidebarSlider {
       setTimeout(() => simulateClickEvent(menuAnchor), 0);
     };
 
-    const OPEN_THRESHOLD = 44;
+    const OPEN_THRESHOLD = 32;
     const MAX_PULL = 22;
 
     const setPull = (offset: number) => {
@@ -895,12 +895,14 @@ export class AppSidebarLeft extends SidebarSlider {
     let touchId: number;
     let startY = 0;
     let swipeDistance = 0;
+    let openedForSwipe = false;
 
     const startSwipe = (clientY: number) => {
       if(menuAnchor.classList.contains('menu-open')) return false;
 
       startY = clientY;
       swipeDistance = 0;
+      openedForSwipe = false;
       return true;
     };
 
@@ -915,10 +917,18 @@ export class AppSidebarLeft extends SidebarSlider {
       indicator.classList.add('is-pulling');
       const pull = MAX_PULL * (1 - Math.exp(-Math.abs(swipeDistance) / MAX_PULL));
       setPull(-pull);
+
+      // Open as soon as the deliberate upward gesture crosses the threshold.
+      // Waiting for touchend is unreliable at the bottom edge of installed
+      // mobile WebViews, where the system can take ownership of the release.
+      if(!openedForSwipe && swipeDistance <= -OPEN_THRESHOLD) {
+        openedForSwipe = true;
+        openMenu();
+      }
     };
 
     const finishSwipe = () => {
-      const shouldOpen = swipeDistance <= -OPEN_THRESHOLD;
+      const shouldOpen = !openedForSwipe && swipeDistance <= -OPEN_THRESHOLD;
       pointerId = undefined;
       touchId = undefined;
       indicator.classList.remove('is-pulling');
