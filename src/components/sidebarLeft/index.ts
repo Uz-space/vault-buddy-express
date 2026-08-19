@@ -878,10 +878,13 @@ export class AppSidebarLeft extends SidebarSlider {
         return;
       }
 
-      simulateClickEvent(menuAnchor);
+      // Open after the release event has finished bubbling. Otherwise the
+      // document-level menu closer can consume the same gesture that opened
+      // the menu, which is especially common in Android WebViews.
+      setTimeout(() => simulateClickEvent(menuAnchor), 0);
     };
 
-    const OPEN_THRESHOLD = 44;
+    const OPEN_THRESHOLD = 32;
     const MAX_PULL = 22;
 
     const setPull = (offset: number) => {
@@ -889,51 +892,101 @@ export class AppSidebarLeft extends SidebarSlider {
     };
 
     let pointerId: number;
+    let touchId: number;
     let startY = 0;
     let swipeDistance = 0;
+    let openedForSwipe = false;
 
-    indicator.addEventListener('pointerdown', (e) => {
-      if(menuAnchor.classList.contains('menu-open')) return;
+    const startSwipe = (clientY: number) => {
+      if(menuAnchor.classList.contains('menu-open')) return false;
 
-      pointerId = e.pointerId;
-      startY = e.clientY;
+      startY = clientY;
       swipeDistance = 0;
-      indicator.setPointerCapture(pointerId);
-    });
+      openedForSwipe = false;
+      return true;
+    };
 
-    indicator.addEventListener('pointermove', (e) => {
-      if(e.pointerId !== pointerId) return;
-
-      swipeDistance = e.clientY - startY;
+    const moveSwipe = (clientY: number) => {
+      swipeDistance = clientY - startY;
       if(swipeDistance >= 0) {
         indicator.classList.remove('is-pulling');
         setPull(0);
         return;
       }
 
-      e.preventDefault();
       indicator.classList.add('is-pulling');
       const pull = MAX_PULL * (1 - Math.exp(-Math.abs(swipeDistance) / MAX_PULL));
       setPull(-pull);
-    });
 
-    const finishSwipe = (e: PointerEvent) => {
-      if(e.pointerId !== pointerId) return;
+      // Open as soon as the deliberate upward gesture crosses the threshold.
+      // Waiting for touchend is unreliable at the bottom edge of installed
+      // mobile WebViews, where the system can take ownership of the release.
+      if(!openedForSwipe && swipeDistance <= -OPEN_THRESHOLD) {
+        openedForSwipe = true;
+        openMenu();
+      }
+    };
 
-      const shouldOpen = swipeDistance <= -OPEN_THRESHOLD;
+    const finishSwipe = () => {
+      const shouldOpen = !openedForSwipe && swipeDistance <= -OPEN_THRESHOLD;
       pointerId = undefined;
+      touchId = undefined;
       indicator.classList.remove('is-pulling');
       setPull(0);
       if(shouldOpen) openMenu();
     };
 
-    indicator.addEventListener('pointerup', finishSwipe);
-    indicator.addEventListener('pointercancel', (e) => {
-      if(e.pointerId !== pointerId) return;
+    const cancelSwipe = () => {
       pointerId = undefined;
+      touchId = undefined;
       indicator.classList.remove('is-pulling');
       setPull(0);
+    };
+
+    indicator.addEventListener('pointerdown', (e) => {
+      if(e.pointerType === 'touch' || !startSwipe(e.clientY)) return;
+
+      pointerId = e.pointerId;
+      indicator.setPointerCapture(pointerId);
     });
+
+    indicator.addEventListener('pointermove', (e) => {
+      if(e.pointerId !== pointerId) return;
+
+      e.preventDefault();
+      moveSwipe(e.clientY);
+    });
+
+    indicator.addEventListener('pointerup', (e) => {
+      if(e.pointerId !== pointerId) return;
+      finishSwipe();
+    });
+    indicator.addEventListener('pointercancel', (e) => {
+      if(e.pointerId !== pointerId) return;
+      cancelSwipe();
+    });
+
+    // Some installed Android WebViews don't deliver a complete PointerEvent
+    // sequence for elements at the viewport edge. Keep a native touch path as
+    // the mobile source of truth, while pointer events cover mouse and pen.
+    indicator.addEventListener('touchstart', (e) => {
+      const touch = e.changedTouches[0];
+      if(!touch || !startSwipe(touch.clientY)) return;
+      touchId = touch.identifier;
+    }, {passive: true});
+    indicator.addEventListener('touchmove', (e) => {
+      const touch = Array.from(e.changedTouches).find((item) => item.identifier === touchId);
+      if(!touch) return;
+      e.preventDefault();
+      moveSwipe(touch.clientY);
+    }, {passive: false});
+    indicator.addEventListener('touchend', (e) => {
+      const touch = Array.from(e.changedTouches).find((item) => item.identifier === touchId);
+      if(!touch) return;
+      moveSwipe(touch.clientY);
+      finishSwipe();
+    });
+    indicator.addEventListener('touchcancel', cancelSwipe);
   }
 
 
