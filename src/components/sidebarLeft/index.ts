@@ -100,6 +100,7 @@ import isObject from '@helpers/object/isObject';
 import {useAppSettings} from '@stores/appSettings';
 import {useCollapsedCommunityDialogsKey} from '@stores/communities';
 import {openEmojiStatusPicker} from '@components/sidebarLeft/emojiStatusPicker';
+import SwipeHandler from '@components/swipeHandler';
 
 export const LEFT_COLUMN_ACTIVE_CLASSNAME = 'is-left-column-shown';
 
@@ -858,27 +859,35 @@ export class AppSidebarLeft extends SidebarSlider {
     const indicator = document.createElement('div');
     indicator.className = 'sidebar-home-indicator';
 
-    const menuAnchor = document.createElement('div');
-    menuAnchor.className = 'sidebar-home-indicator-menu-anchor';
-
     const bar = document.createElement('div');
     bar.className = 'sidebar-home-indicator-bar';
-    indicator.append(menuAnchor, bar);
+    indicator.append(bar);
 
-    // Keep the menu toggle separate from the touch surface. Native taps on
-    // the indicator can never reach it; only a completed upward swipe sends
-    // the synthetic opening event.
-    this.createToolsMenu(menuAnchor, {top: 8, bottom: 8}, 'top-center');
+    // The indicator itself is the menu toggle, so the tools menu pops
+    // upwards, horizontally centered on the indicator.
+    this.createToolsMenu(indicator, {top: 8, bottom: 8}, 'top-center');
 
     this.sidebarEl.append(indicator);
     this.homeIndicator = indicator;
 
+    // Taps must NOT open the menu — swallow every click that wasn't
+    // synthesized by the swipe below.
+    let allowOpen = false;
+    indicator.addEventListener('click', (e) => {
+      if(!allowOpen) {
+        e.stopPropagation();
+        e.preventDefault();
+      }
+    }, {capture: true});
+
     const openMenu = () => {
-      if(menuAnchor.classList.contains('menu-open')) {
+      if(indicator.classList.contains('menu-open')) {
         return;
       }
 
-      simulateClickEvent(menuAnchor);
+      allowOpen = true;
+      simulateClickEvent(indicator);
+      allowOpen = false;
     };
 
     const OPEN_THRESHOLD = 44;
@@ -888,51 +897,33 @@ export class AppSidebarLeft extends SidebarSlider {
       bar.style.setProperty('--pull', offset + 'px');
     };
 
-    let pointerId: number;
-    let startY = 0;
-    let swipeDistance = 0;
+    new SwipeHandler({
+      element: indicator,
+      cancelEvent: true,
+      verifyTouchTarget: () => !indicator.classList.contains('menu-open'),
+      onSwipe: (xDiff, yDiff) => {
+        if(yDiff >= 0) {
+          indicator.classList.remove('is-pulling');
+          setPull(0);
+          return;
+        }
 
-    indicator.addEventListener('pointerdown', (e) => {
-      if(menuAnchor.classList.contains('menu-open')) return;
+        indicator.classList.add('is-pulling');
+        // rubber-band: follows the finger, slowing down near the max
+        const pull = MAX_PULL * (1 - Math.exp(-Math.abs(yDiff) / MAX_PULL));
+        setPull(-pull);
 
-      pointerId = e.pointerId;
-      startY = e.clientY;
-      swipeDistance = 0;
-      indicator.setPointerCapture(pointerId);
-    });
-
-    indicator.addEventListener('pointermove', (e) => {
-      if(e.pointerId !== pointerId) return;
-
-      swipeDistance = e.clientY - startY;
-      if(swipeDistance >= 0) {
+        if(yDiff <= -OPEN_THRESHOLD) {
+          indicator.classList.remove('is-pulling');
+          setPull(0);
+          openMenu();
+          return true;
+        }
+      },
+      onReset: () => {
         indicator.classList.remove('is-pulling');
         setPull(0);
-        return;
       }
-
-      e.preventDefault();
-      indicator.classList.add('is-pulling');
-      const pull = MAX_PULL * (1 - Math.exp(-Math.abs(swipeDistance) / MAX_PULL));
-      setPull(-pull);
-    });
-
-    const finishSwipe = (e: PointerEvent) => {
-      if(e.pointerId !== pointerId) return;
-
-      const shouldOpen = swipeDistance <= -OPEN_THRESHOLD;
-      pointerId = undefined;
-      indicator.classList.remove('is-pulling');
-      setPull(0);
-      if(shouldOpen) openMenu();
-    };
-
-    indicator.addEventListener('pointerup', finishSwipe);
-    indicator.addEventListener('pointercancel', (e) => {
-      if(e.pointerId !== pointerId) return;
-      pointerId = undefined;
-      indicator.classList.remove('is-pulling');
-      setPull(0);
     });
   }
 
