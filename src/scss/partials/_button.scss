@@ -264,6 +264,9 @@ $btn-menu-z-index: 4;
   &.top-center {
     --transform-origin-x: center;
     --transform-origin-y: bottom;
+    --transform-extra: translateX(calc(-50% + var(--parent-half-width)));
+    inset-block: auto 100%;
+    inset-inline: 0 auto;
   }
 
   &.center-left {

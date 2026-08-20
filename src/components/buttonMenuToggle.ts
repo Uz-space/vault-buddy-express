@@ -77,7 +77,7 @@ export function createButtonMenuVisibility(
   };
 }
 
-export type ButtonMenuDirection = 'bottom-left' | 'bottom-right' | 'bottom-center' | 'top-left' | 'top-right'
+export type ButtonMenuDirection = 'bottom-left' | 'bottom-right' | 'bottom-center' | 'top-left' | 'top-center' | 'top-right'
 
 export default function ButtonMenuToggle({
   buttonOptions,
